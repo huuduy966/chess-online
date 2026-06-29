@@ -1,0 +1,15 @@
+# CODEOWNERS — ai được tự động yêu cầu review khi PR đụng vào code tương ứng.
+# Cú pháp: <pattern> <@user hoặc @org/team>
+# Thay @huuduy966 bằng username/team thật của các thành viên phụ trách.
+
+# Mặc định: mọi thay đổi cần owner của repo review
+*               @huuduy966
+
+# Client (React + Vite)
+/client/        @huuduy966
+
+# Server (Node + Socket.io) — phần nhạy cảm, nên có người rành backend review
+/server/        @huuduy966
+
+# CI / cấu hình kiểm soát repo — đổi quy trình thì owner phải duyệt
+/.github/       @huuduy966

@@ -1,0 +1,41 @@
+name: CI
+
+# Chạy mỗi khi mở/cập nhật PR vào main, và khi push thẳng vào main.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  client:
+    name: Build client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install client deps
+        working-directory: client
+        run: npm install
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+  server:
+    name: Check server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install server deps
+        working-directory: server
+        run: npm install
+      - name: Syntax check server
+        working-directory: server
+        run: |
+          node --check index.js
+          node --check ai.js
