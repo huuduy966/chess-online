@@ -10,14 +10,13 @@ import { useAuth } from '../utils/auth.jsx'
 import { scoresFor } from '../utils/elo.js'
 import { BOTS, DEFAULT_BOT_ID, getBot } from '../utils/bots.js'
 import { playMoveSound } from '../utils/sound.js'
-import CoachChat from '../components/CoachChat.jsx'
 
 export default function AIGame() {
   const navigate = useNavigate()
   const { user, recordGame } = useAuth()
   const [game, setGame] = useState(() => new Chess())
   const [playerColor, setPlayerColor] = useState('w')
-  const [botId, setBotId] = useState(() => localStorage.getItem('chess-bot') || DEFAULT_BOT_ID)
+  const [botId, setBotId] = useState(null)
   const [thinking, setThinking] = useState(false)
   const [, setTick] = useState(0)
   const [eloResult, setEloResult] = useState(null)
@@ -30,16 +29,16 @@ export default function AIGame() {
   const gameRef = useRef(game)
   gameRef.current = game
 
-  const bot = useMemo(() => getBot(botId), [botId])
-  const aiTurn = game.turn() !== playerColor && !game.isGameOver()
+  const bot = useMemo(() => (botId ? getBot(botId) : null), [botId])
+  const aiTurn = !!bot && game.turn() !== playerColor && !game.isGameOver()
 
-  useEffect(() => { localStorage.setItem('chess-bot', botId) }, [botId])
+  useEffect(() => { if (botId) localStorage.setItem('chess-bot', botId) }, [botId])
 
   // Delay engine theo depth: depth 1 ~250ms, depth 4 ~1200ms (giả "suy nghĩ")
-  const thinkDelay = useMemo(() => Math.min(1500, 200 + bot.depth * 250), [bot.depth])
+  const thinkDelay = useMemo(() => (bot ? Math.min(1500, 200 + bot.depth * 250) : 0), [bot])
 
   useEffect(() => {
-    if (!aiTurn) return
+    if (!aiTurn || !bot) return
     setThinking(true)
     const id = setTimeout(() => {
       const move = chooseMoveForBot(gameRef.current, { depth: bot.depth, randomChance: bot.randomChance })
@@ -51,10 +50,10 @@ export default function AIGame() {
       setThinking(false)
     }, thinkDelay)
     return () => clearTimeout(id)
-  }, [aiTurn, bot.depth, bot.randomChance, thinkDelay, game.fen()])
+  }, [aiTurn, bot, thinkDelay, game.fen()])
 
   useEffect(() => {
-    if (!game.isGameOver() || recordedRef.current) return
+    if (!bot || !game.isGameOver() || recordedRef.current) return
     recordedRef.current = true
     if (game.history().length === 0) return
 
@@ -122,24 +121,41 @@ export default function AIGame() {
     : null
   const resultTitle = outcome === 'win' ? 'Bạn thắng!' : outcome === 'loss' ? 'Bạn thua' : outcome === 'draw' ? 'Hòa cờ' : 'Kết thúc'
 
+  if (!bot) {
+    return (
+      <div className="lobby">
+        <div className="lobby-card" style={{ maxWidth: 640 }}>
+          <h2>Chọn đối thủ</h2>
+          <p className="muted">Chọn một bot để bắt đầu ván đấu</p>
+          <div className="bot-list">
+            {BOTS.map(b => (
+              <button
+                key={b.id}
+                className="bot-option"
+                onClick={() => setBotId(b.id)}
+                type="button"
+              >
+                <span className="bot-name">{b.name}</span>
+                <span className="bot-elo">{b.elo}</span>
+              </button>
+            ))}
+          </div>
+          <label className="muted" style={{ marginTop: '1rem' }}>Bạn cầm quân</label>
+          <button className="btn secondary" onClick={() => setPlayerColor((c) => (c === 'w' ? 'b' : 'w'))}>
+            {playerColor === 'w' ? 'Trắng' : 'Đen'} — Đổi
+          </button>
+          {!user && <p className="muted">Đăng nhập để được tính Elo</p>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="game-page">
       <div className="panel">
-        <h3>Đấu với máy</h3>
-        <label className="muted">Chọn đối thủ</label>
-        <div className="bot-list">
-          {BOTS.map(b => (
-            <button
-              key={b.id}
-              className={`bot-option ${botId === b.id ? 'active' : ''}`}
-              onClick={() => { setBotId(b.id); reset() }}
-              type="button"
-            >
-              <span className="bot-name">{b.name}</span>
-              <span className="bot-elo">{b.elo}</span>
-            </button>
-          ))}
-        </div>
+        <h3>Đấu với {bot.name}</h3>
+        <p className="muted">Elo: {bot.elo}</p>
+        <button className="btn secondary" onClick={() => { setBotId(null); reset() }}>Đổi đối thủ</button>
         <label className="muted">Bạn cầm quân</label>
         <button className="btn secondary" onClick={swapColor}>
           {playerColor === 'w' ? 'Trắng (đang chơi)' : 'Đen (đang chơi)'} — Đổi
@@ -160,7 +176,6 @@ export default function AIGame() {
         <StatusBar game={game} extraText={thinking ? `${bot.name} đang tính nước...` : eloLine} />
         <h3>Lịch sử nước đi</h3>
         <MoveHistory history={history} />
-        <CoachChat fen={game.fen()} myColor={playerColor} />
       </div>
 
       <ResultModal

@@ -5,7 +5,6 @@ import Board from '../components/Board.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import MoveHistory from '../components/MoveHistory.jsx'
 import GameOverModal from '../components/GameOverModal.jsx'
-import CoachChat from '../components/CoachChat.jsx'
 import { playMoveSound } from '../utils/sound.js'
 
 export default function LocalGame() {
@@ -36,7 +35,6 @@ export default function LocalGame() {
         <p className="muted">2 người chơi trên cùng một máy. Drag-drop hoặc click để di chuyển.</p>
         <button className="btn secondary" onClick={undo} disabled={game.history().length === 0}>↶ Hoàn tác</button>
         <button className="btn danger" onClick={reset}>Bắt đầu lại</button>
-        <CoachChat fen={game.fen()} myColor={game.turn()} />
       </div>
 
       <Board game={game} onMove={onMove} />

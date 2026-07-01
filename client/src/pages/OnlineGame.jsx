@@ -6,7 +6,6 @@ import StatusBar from '../components/StatusBar.jsx'
 import MoveHistory from '../components/MoveHistory.jsx'
 import ResultModal from '../components/ResultModal.jsx'
 import Clock from '../components/Clock.jsx'
-import CoachChat from '../components/CoachChat.jsx'
 import { playMoveSound, sfx } from '../utils/sound.js'
 import { socket } from '../utils/socket.js'
 import { useAuth } from '../utils/auth.jsx'
@@ -288,7 +287,6 @@ export default function OnlineGame() {
           Đầu hàng
         </button>
         <button className="btn secondary" onClick={() => navigate('/online')}>Rời phòng</button>
-        {color !== 'spectator' && <CoachChat fen={state.fen} myColor={color} />}
       </div>
 
       <Board
